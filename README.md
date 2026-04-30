@@ -3,14 +3,15 @@
 一个参考 `HabitKit` 交互方向、但面向更广义追踪与记录场景的多端应用仓库。
 
 当前阶段：
-- `iOS` 是唯一已确定并正在实现的客户端，技术栈为 `Swift + SwiftUI`
-- `Android / Web / Backend` 先保留清晰坑位，不提前绑定技术选型
+- `iOS` 是已落地客户端，技术栈为 `Swift + SwiftUI + GRDB`
+- `Android` 是已落地客户端，技术栈为 `Kotlin + Jetpack Compose + Room`
+- `Web / Backend` 先保留清晰坑位，不提前绑定技术选型
 - 变更流程使用 `OpenSpec`
 
 ## 仓库结构
 
 - `apps/ios`：iOS 主工程与 Swift 包
-- `apps/android`：Android 端占位与接入说明
+- `apps/android`：Android 主工程与 Gradle 模块
 - `apps/web`：Web 端占位与接入说明
 - `services/backend`：后端服务占位与接入说明
 - `shared/product`：跨端产品信息架构、流程与说明
@@ -26,6 +27,12 @@
 2. 运行 `xcodegen generate`
 3. 打开 `MarkerApp.xcodeproj`
 
+## Android 启动方式
+
+1. 进入 `apps/android`
+2. 运行 `./gradlew :app:assembleDebug`
+3. 使用 Android Studio 打开 `apps/android` 或安装生成的 Debug APK
+
 ## OpenSpec
 
 当前主规格包括：
@@ -37,6 +44,7 @@
 - `day-key-semantics`
 - `tracking-domain-generalization`
 - `tracking-entry-payloads`
+- `android-local-tracker-app`
 
 ## AI 开发约定
 
