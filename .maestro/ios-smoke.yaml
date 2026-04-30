@@ -1,0 +1,19 @@
+appId: com.edge.marker
+---
+- launchApp:
+    clearState: true
+    arguments:
+      uitesting: "true"
+      resetData: "true"
+      seedDemoData: "true"
+- assertVisible:
+    id: screen.today
+- tapOn: History
+- assertVisible:
+    id: screen.history
+- tapOn: Statistics
+- assertVisible:
+    id: screen.statistics
+- tapOn: Settings
+- assertVisible:
+    id: screen.settings

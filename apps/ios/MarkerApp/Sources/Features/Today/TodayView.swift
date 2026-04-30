@@ -28,6 +28,7 @@ struct TodayView: View {
                 Button("创建第一个追踪项") {
                     presentedDraft = .empty
                 }
+                .accessibilityIdentifier("today.addTracker")
             } else {
                 ForEach(model.todayItems, id: \.id) { item in
                     TodayTrackerRow(
@@ -121,6 +122,8 @@ struct TodayView: View {
             } label: {
                 Image(systemName: "plus")
             }
+            .accessibilityLabel("Add")
+            .accessibilityIdentifier("today.addTracker")
         }
     }
 

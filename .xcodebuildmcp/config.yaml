@@ -1,0 +1,13 @@
+schemaVersion: 1
+sentryDisabled: true
+incrementalBuildsEnabled: true
+enabledWorkflows:
+  - simulator
+  - ui-automation
+  - debugging
+sessionDefaults:
+  projectPath: apps/ios/MarkerApp.xcodeproj
+  scheme: MarkerApp
+  configuration: Debug
+  simulatorName: iPhone 17
+  bundleId: com.edge.marker

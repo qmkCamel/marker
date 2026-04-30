@@ -36,6 +36,14 @@ enum AppDestination: String, CaseIterable, Identifiable {
         }
     }
 
+    var tabAutomationIdentifier: String {
+        "tab.\(rawValue)"
+    }
+
+    var screenAutomationIdentifier: String {
+        "screen.\(rawValue)"
+    }
+
     @ViewBuilder
     func makeRootView(model: MarkerAppModel) -> some View {
         switch self {

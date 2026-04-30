@@ -1,0 +1,20 @@
+appId: com.edge.marker
+---
+- launchApp:
+    clearState: true
+    arguments:
+      uitesting: "true"
+      resetData: "true"
+      seedDemoData: "true"
+- assertVisible:
+    id: screen.today
+- tapOn:
+    id: today.addTracker
+- assertVisible:
+    id: trackerEditor.name
+- tapOn:
+    id: trackerEditor.name
+- inputText: "Walk"
+- tapOn:
+    id: trackerEditor.save
+- assertVisible: "Walk"

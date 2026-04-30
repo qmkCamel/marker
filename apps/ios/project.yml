@@ -51,6 +51,18 @@ targets:
     dependencies:
       - target: MarkerApp
 
+  MarkerAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: MarkerApp/UITests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: MarkerApp
+
 schemes:
   MarkerApp:
     build:
@@ -60,3 +72,4 @@ schemes:
     test:
       targets:
         - name: MarkerAppTests
+        - name: MarkerAppUITests

@@ -13,9 +13,11 @@ struct MarkerRootView: View {
             ForEach(AppDestination.allCases) { destination in
                 NavigationStack {
                     destination.makeRootView(model: model)
+                        .accessibilityIdentifier(destination.screenAutomationIdentifier)
                 }
                 .tabItem {
                     Label(destination.title, systemImage: destination.systemImage)
+                        .accessibilityIdentifier(destination.tabAutomationIdentifier)
                 }
                 .tag(destination)
             }

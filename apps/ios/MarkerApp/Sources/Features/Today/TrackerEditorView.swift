@@ -17,6 +17,7 @@ struct TrackerEditorView: View {
                 }
 
                 TextField("追踪项名称", text: $draft.name)
+                    .accessibilityIdentifier("trackerEditor.name")
                 TextField("备注", text: $draft.notes, axis: .vertical)
                     .lineLimit(2...4)
             }
@@ -82,6 +83,7 @@ struct TrackerEditorView: View {
                 Button("取消") {
                     onCancel()
                 }
+                .accessibilityIdentifier("trackerEditor.cancel")
             }
 
             ToolbarItem(placement: .topBarTrailing) {
@@ -89,6 +91,7 @@ struct TrackerEditorView: View {
                     onSave(draft)
                 }
                 .disabled(draft.validationMessage != nil)
+                .accessibilityIdentifier("trackerEditor.save")
             }
         }
     }
