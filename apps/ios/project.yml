@@ -1,0 +1,62 @@
+name: MarkerApp
+
+options:
+  createIntermediateGroups: true
+  minimumXcodeGenVersion: 2.42.0
+
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+
+packages:
+  MarkerDomain:
+    path: Packages/MarkerDomain
+  MarkerData:
+    path: Packages/MarkerData
+  MarkerDesignSystem:
+    path: Packages/MarkerDesignSystem
+
+targets:
+  MarkerApp:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: MarkerApp/Sources
+    settings:
+      base:
+        PRODUCT_NAME: MarkerApp
+        PRODUCT_BUNDLE_IDENTIFIER: com.edge.marker
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Marker
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        CURRENT_PROJECT_VERSION: 1
+        MARKETING_VERSION: 1.0
+        TARGETED_DEVICE_FAMILY: 1,2
+    dependencies:
+      - package: MarkerDomain
+      - package: MarkerData
+      - package: MarkerDesignSystem
+
+  MarkerAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "17.0"
+    hostApplication: MarkerApp
+    sources:
+      - path: MarkerApp/Tests
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+    dependencies:
+      - target: MarkerApp
+
+schemes:
+  MarkerApp:
+    build:
+      targets:
+        MarkerApp: all
+        MarkerAppTests: [test]
+    test:
+      targets:
+        - name: MarkerAppTests

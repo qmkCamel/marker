@@ -1,0 +1,48 @@
+schema: spec-driven
+
+context: |
+  Product: Marker, a HabitKit-like habit tracking application.
+  Repository strategy: lightweight multi-platform monorepo.
+  Active implementation platform: iOS with Swift and SwiftUI.
+  iOS project generation: XcodeGen plus Swift Package Manager.
+  Deferred platforms: Android, Web, and backend are placeholders only for now.
+  Scope for the first milestone: repository foundation and runnable iOS shell, not business features.
+  Development preference: keep boundaries explicit, avoid premature platform commitments, and preserve future sync-friendly architecture.
+  AI-assisted development: large-scale AI code generation is expected.
+  Source of truth order: openspec/specs and shared/contracts define behavior and domain semantics before platform code.
+  Engineering conventions: follow SOLID; split JavaScript and TypeScript files by responsibility before they exceed 600 lines; keep function parameters explicitly typed where the language supports it.
+  AI change strategy: prefer one OpenSpec change per independently verifiable capability and require exact verification commands for implementation tasks.
+  Default language preference: future OpenSpec specs should be written in Simplified Chinese unless the user explicitly requests another language.
+
+rules:
+  proposal:
+    - Keep each AI-oriented change focused on one independently verifiable capability.
+    - Always include impacted workspaces and explicit non-goals for non-trivial implementation changes.
+  design:
+    - Always document source-of-truth boundaries, allowed change surfaces, and what remains deferred.
+    - Cross-platform or domain-facing designs must reference openspec/specs and shared/contracts instead of redefining behavior in platform code.
+  specs:
+    - Write spec content in Simplified Chinese by default, including requirement text and scenarios, unless the user explicitly requests another language.
+  tasks:
+    - Each code-oriented task must name the exact files, directories, or packages it intends to modify.
+    - Each implementation task must include exact verification commands.
+    - Behavior changes should include focused automated verification unless the change is configuration-only.
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+# Add your tech stack, conventions, style guides, domain knowledge, etc.
+# Example:
+#   context: |
+#     Tech stack: TypeScript, React, Node.js
+#     We use conventional commits
+#     Domain: e-commerce platform
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours

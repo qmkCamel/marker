@@ -1,0 +1,22 @@
+.DS_Store
+
+# OpenSpec / Cursor local output
+.cursor/**/cache/
+
+# Xcode / Apple tooling
+DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcuserstate
+
+# Generated iOS project
+apps/ios/MarkerApp.xcodeproj/
+
+# Swift Package Manager
+.build/
+Package.resolved
+
+# Misc build output
+build/
+**/.gradle/
+**/local.properties
