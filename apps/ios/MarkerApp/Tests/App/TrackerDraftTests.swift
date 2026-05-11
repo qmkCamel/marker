@@ -1,6 +1,7 @@
 import Foundation
 import XCTest
 @testable import MarkerApp
+import MarkerDomain
 
 final class TrackerDraftTests: XCTestCase {
     func testEmptyNameIsInvalid() {
@@ -26,5 +27,19 @@ final class TrackerDraftTests: XCTestCase {
         draft.weeklyQuotaTarget = 0
 
         XCTAssertEqual(draft.validationMessage, "每周目标次数必须大于 0")
+    }
+
+    func testTemplateDraftUsesKindDefaults() {
+        let medication = TrackerDraft.template(for: .medication)
+        let cycle = TrackerDraft.template(for: .cycle)
+        let custom = TrackerDraft.template(for: .custom)
+
+        XCTAssertEqual(medication.kind, .medication)
+        XCTAssertEqual(medication.colorToken, "blue")
+        XCTAssertEqual(medication.scheduleKind, .daily)
+        XCTAssertEqual(cycle.kind, .cycle)
+        XCTAssertEqual(cycle.colorToken, "pink")
+        XCTAssertEqual(custom.kind, .custom)
+        XCTAssertEqual(custom.colorToken, "purple")
     }
 }

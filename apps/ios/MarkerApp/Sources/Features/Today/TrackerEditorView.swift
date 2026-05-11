@@ -10,9 +10,13 @@ struct TrackerEditorView: View {
     var body: some View {
         Form {
             Section("基础信息") {
-                Picker("类型", selection: $draft.kind) {
-                    ForEach(TrackerKind.allCases, id: \.self) { kind in
-                        Text(kind.title).tag(kind)
+                if draft.existingTrackerID == nil {
+                    LabeledContent("类型", value: draft.kind.title)
+                } else {
+                    Picker("类型", selection: $draft.kind) {
+                        ForEach(TrackerKind.allCases, id: \.self) { kind in
+                            Text(kind.title).tag(kind)
+                        }
                     }
                 }
 
@@ -77,7 +81,7 @@ struct TrackerEditorView: View {
                 }
             }
         }
-        .navigationTitle(draft.existingTrackerID == nil ? "新建追踪项" : "编辑追踪项")
+        .navigationTitle(draft.existingTrackerID == nil ? "设置\(draft.kind.title)" : "编辑追踪项")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("取消") {

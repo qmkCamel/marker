@@ -50,6 +50,35 @@ struct TrackerDraft: Identifiable {
         isArchived: false
     )
 
+    static func template(for kind: TrackerKind) -> TrackerDraft {
+        TrackerDraft(
+            id: UUID(),
+            existingTrackerID: nil,
+            createdAt: Date(),
+            kind: kind,
+            name: "",
+            colorToken: defaultColorToken(for: kind),
+            notes: "",
+            scheduleKind: .daily,
+            selectedWeekdays: [.monday, .wednesday, .friday],
+            weeklyQuotaTarget: 3,
+            isArchived: false
+        )
+    }
+
+    private static func defaultColorToken(for kind: TrackerKind) -> String {
+        switch kind {
+        case .habit:
+            return "green"
+        case .medication:
+            return "blue"
+        case .cycle:
+            return "pink"
+        case .custom:
+            return "purple"
+        }
+    }
+
     init(
         id: UUID,
         existingTrackerID: UUID?,

@@ -6,11 +6,13 @@ struct TodayView: View {
     @ObservedObject var model: MarkerAppModel
     @State private var presentedDraft: TrackerDraft?
     @State private var presentedEntryDraft: TrackingEntryDraft?
+    @State private var templatePickerPresented = false
 
     var body: some View {
         todayList
             .navigationTitle("Today")
             .toolbar(content: toolbarContent)
+            .sheet(isPresented: $templatePickerPresented) { templatePickerSheet }
             .sheet(isPresented: trackerEditorPresented) { trackerEditorSheet }
             .sheet(isPresented: entryEditorPresented) { entryEditorSheet }
     }
@@ -42,7 +44,7 @@ struct TodayView: View {
                 )
 
                 Button("创建追踪项") {
-                    presentedDraft = .empty
+                    templatePickerPresented = true
                 }
                 .accessibilityIdentifier("today.addTracker")
             }
@@ -201,12 +203,28 @@ struct TodayView: View {
     private func toolbarContent() -> some ToolbarContent {
         ToolbarItem(placement: .topBarTrailing) {
             Button {
-                presentedDraft = .empty
+                templatePickerPresented = true
             } label: {
                 Image(systemName: "plus")
             }
             .accessibilityLabel("Add")
             .accessibilityIdentifier("today.addTracker")
+        }
+    }
+
+    private var templatePickerSheet: some View {
+        NavigationStack {
+            TrackerTemplatePickerView(
+                onSelect: { kind in
+                    templatePickerPresented = false
+                    DispatchQueue.main.async {
+                        presentedDraft = .template(for: kind)
+                    }
+                },
+                onCancel: {
+                    templatePickerPresented = false
+                }
+            )
         }
     }
 
@@ -247,6 +265,98 @@ struct TodayView: View {
                     }
                 )
             }
+        }
+    }
+}
+
+private struct TrackerTemplatePickerView: View {
+    let onSelect: (TrackerKind) -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("先选择想记录的类型")
+                        .font(.title3.bold())
+                    Text("选择模板后，再填写名称、颜色和频率。")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+            }
+            .listRowBackground(Color.clear)
+
+            Section("模板") {
+                ForEach(TrackerKind.allCases, id: \.self) { kind in
+                    Button {
+                        onSelect(kind)
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: iconName(for: kind))
+                                .font(.title3)
+                                .foregroundStyle(MarkerPresentation.color(for: colorToken(for: kind)))
+                                .frame(width: 36, height: 36)
+                                .background(MarkerPresentation.color(for: colorToken(for: kind)).opacity(0.12))
+                                .clipShape(Circle())
+
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(kind.title)
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+                                Text(description(for: kind))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+
+                            Spacer()
+
+                            Image(systemName: "chevron.right")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("trackerTemplate.\(kind.rawValue)")
+                }
+            }
+        }
+        .navigationTitle("创建追踪项")
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("取消", action: onCancel)
+                    .accessibilityIdentifier("trackerTemplate.cancel")
+            }
+        }
+    }
+
+    private func iconName(for kind: TrackerKind) -> String {
+        switch kind {
+        case .habit:
+            return "checkmark.circle"
+        case .medication:
+            return "pills"
+        case .cycle:
+            return "drop"
+        case .custom:
+            return "note.text"
+        }
+    }
+
+    private func colorToken(for kind: TrackerKind) -> String {
+        TrackerDraft.template(for: kind).colorToken
+    }
+
+    private func description(for kind: TrackerKind) -> String {
+        switch kind {
+        case .habit:
+            return "适合喝水、运动、早睡"
+        case .medication:
+            return "确认已服用或已跳过"
+        case .cycle:
+            return "记录流量、症状和备注"
+        case .custom:
+            return "写下其他状态或观察"
         }
     }
 }

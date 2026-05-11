@@ -26,16 +26,17 @@ final class MarkerAppSmokeUITests: XCTestCase {
         app.launch()
 
         button(identifier: "today.addTracker", fallbackTitle: "Add", in: app).tap()
+        button(identifier: "trackerTemplate.medication", fallbackTitle: "用药", in: app).tap()
         let nameField = element(identifier: "trackerEditor.name", in: app)
         XCTAssertTrue(nameField.waitForExistence(timeout: 5), "Expected trackerEditor.name to be visible")
         assertVisible("trackerEditor.save", in: app)
         assertVisible("trackerEditor.cancel", in: app)
 
         nameField.tap()
-        nameField.typeText("Walk")
+        nameField.typeText("Vitamin D")
         button(identifier: "trackerEditor.save", fallbackTitle: "Save", in: app).tap()
 
-        XCTAssertTrue(app.staticTexts["Walk"].waitForExistence(timeout: 5), "Expected created tracker to be visible")
+        XCTAssertTrue(app.staticTexts["Vitamin D"].waitForExistence(timeout: 5), "Expected created tracker to be visible")
     }
 
     func testCanBackfillHistoricalEntryFromHistory() {
