@@ -7,6 +7,7 @@ struct TrackingEntryDraft: Identifiable {
     let dayKey: DayKey
     let existingEntryID: UUID?
     let recordedAt: Date
+    let recordedTimeZoneIdentifier: String
 
     var medicationStatus: MedicationStatus
     var doseText: String
@@ -21,6 +22,7 @@ struct TrackingEntryDraft: Identifiable {
         self.dayKey = dayKey
         self.existingEntryID = existingEntry?.id
         self.recordedAt = existingEntry?.recordedAt ?? Date()
+        self.recordedTimeZoneIdentifier = existingEntry?.recordedTimeZoneIdentifier ?? TimeZone.current.identifier
 
         switch existingEntry?.payload.kind ?? TrackingPayload.defaultPayload(for: tracker.kind).kind {
         case .completion:
@@ -71,13 +73,13 @@ struct TrackingEntryDraft: Identifiable {
         }
     }
 
-    func makeEntry(timeZoneIdentifier: String = TimeZone.current.identifier) -> TrackingEntry {
+    func makeEntry(timeZoneIdentifier: String? = nil) -> TrackingEntry {
         TrackingEntry(
             id: existingEntryID ?? id,
             trackerId: tracker.id,
             dayKey: dayKey,
             recordedAt: recordedAt,
-            recordedTimeZoneIdentifier: timeZoneIdentifier,
+            recordedTimeZoneIdentifier: timeZoneIdentifier ?? recordedTimeZoneIdentifier,
             payload: payload
         )
     }

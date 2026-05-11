@@ -22,7 +22,11 @@ final class MarkerAppModel: ObservableObject {
     }
 
     var todayItems: [TodayTrackerItem] {
-        TrackingEngine.buildTodayItems(
+        todayOverview.allItems
+    }
+
+    var todayOverview: TodayOverview {
+        TrackingEngine.buildTodayOverview(
             trackers: trackers,
             entries: entries,
             dayKey: todayKey,
@@ -47,11 +51,19 @@ final class MarkerAppModel: ObservableObject {
         trackers.filter(\.isArchived)
     }
 
+    var activeTrackers: [Tracker] {
+        trackers.filter { !$0.isArchived }
+    }
+
     func entryDraft(for tracker: Tracker) -> TrackingEntryDraft {
+        entryDraft(for: tracker, dayKey: todayKey)
+    }
+
+    func entryDraft(for tracker: Tracker, dayKey: DayKey) -> TrackingEntryDraft {
         TrackingEntryDraft(
             tracker: tracker,
-            dayKey: todayKey,
-            existingEntry: entryForToday(trackerID: tracker.id)
+            dayKey: dayKey,
+            existingEntry: entry(trackerID: tracker.id, dayKey: dayKey)
         )
     }
 
@@ -123,8 +135,12 @@ final class MarkerAppModel: ObservableObject {
     }
 
     func deleteTodayEntry(for tracker: Tracker) {
+        deleteEntry(for: tracker, dayKey: todayKey)
+    }
+
+    func deleteEntry(for tracker: Tracker, dayKey: DayKey) {
         do {
-            try store.deleteEntry(trackerId: tracker.id, dayKey: todayKey)
+            try store.deleteEntry(trackerId: tracker.id, dayKey: dayKey)
             reload()
         } catch {
             lastErrorMessage = error.localizedDescription
@@ -167,6 +183,10 @@ final class MarkerAppModel: ObservableObject {
     }
 
     private func entryForToday(trackerID: UUID) -> TrackingEntry? {
-        entries.first { $0.trackerId == trackerID && $0.dayKey == todayKey }
+        entry(trackerID: trackerID, dayKey: todayKey)
+    }
+
+    private func entry(trackerID: UUID, dayKey: DayKey) -> TrackingEntry? {
+        entries.first { $0.trackerId == trackerID && $0.dayKey == dayKey }
     }
 }

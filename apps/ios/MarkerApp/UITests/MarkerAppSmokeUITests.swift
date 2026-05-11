@@ -38,6 +38,19 @@ final class MarkerAppSmokeUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Walk"].waitForExistence(timeout: 5), "Expected created tracker to be visible")
     }
 
+    func testCanBackfillHistoricalEntryFromHistory() {
+        let app = makeApp()
+        app.launch()
+
+        openTab(identifier: "tab.history", fallbackTitle: "History", in: app)
+        button(identifier: "history.backfill", fallbackTitle: "Backfill", in: app).tap()
+        button(identifier: "history.backfill.continue", fallbackTitle: "继续", in: app).tap()
+        app.swipeUp()
+        button(identifier: "trackingEntryEditor.save", fallbackTitle: "保存", in: app).tap()
+
+        XCTAssertTrue(app.staticTexts["完成 2 项"].waitForExistence(timeout: 5), "Expected historical day to include the backfilled entry")
+    }
+
     private func makeApp() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
@@ -67,7 +80,7 @@ final class MarkerAppSmokeUITests: XCTestCase {
 
     private func button(identifier: String, fallbackTitle: String, in app: XCUIApplication) -> XCUIElement {
         let identified = app.buttons.matching(identifier: identifier).firstMatch
-        if identified.exists {
+        if identified.waitForExistence(timeout: 2) {
             return identified
         }
 

@@ -3,12 +3,42 @@ import MarkerDomain
 
 struct TodayTrackerItem: Identifiable {
     let tracker: Tracker
-    let hasRecord: Bool
-    let isCompleted: Bool
+    let entry: TrackingEntry?
     let weeklyProgressText: String?
-    let entrySummaryText: String?
 
     var id: UUID { tracker.id }
+    var hasRecord: Bool { entry != nil }
+    var isCompleted: Bool { entry?.countsAsCompletion ?? false }
+    var entrySummaryText: String? { entry?.summary }
+    var isSkippedMedication: Bool {
+        entry?.payload.kind == .medication && entry?.payload.medicationStatus == .skipped
+    }
+}
+
+struct TodayOverview {
+    let activeTrackerCount: Int
+    let pendingItems: [TodayTrackerItem]
+    let recordedItems: [TodayTrackerItem]
+
+    var allItems: [TodayTrackerItem] {
+        pendingItems + recordedItems
+    }
+
+    var summaryText: String {
+        if activeTrackerCount == 0 {
+            return "先记录一件照顾自己的事"
+        }
+
+        if pendingItems.isEmpty && recordedItems.isEmpty {
+            return "今天没有需要记录的项目"
+        }
+
+        if pendingItems.isEmpty {
+            return "今天的记录已保存"
+        }
+
+        return "今天还有 \(pendingItems.count) 项待确认"
+    }
 }
 
 struct HistoryDayItem: Identifiable {
@@ -47,46 +77,78 @@ struct StatisticsSummary {
 }
 
 enum TrackingEngine {
+    static func buildTodayOverview(
+        trackers: [Tracker],
+        entries: [TrackingEntry],
+        dayKey: DayKey,
+        weekStartsOn: MarkerWeekday
+    ) -> TodayOverview {
+        let activeTrackers = trackers.filter { !$0.isArchived }
+        let todayEntries = Dictionary(uniqueKeysWithValues: entries
+            .filter { $0.dayKey == dayKey }
+            .map { ($0.trackerId, $0) })
+
+        var pendingItems: [TodayTrackerItem] = []
+        var recordedItems: [TodayTrackerItem] = []
+
+        for tracker in activeTrackers.sorted(by: { $0.createdAt < $1.createdAt }) {
+            let todayEntry = todayEntries[tracker.id]
+            let weeklyCountBeforeToday = completionCountBeforeDay(
+                entries: entries,
+                trackerID: tracker.id,
+                dayKey: dayKey,
+                weekStartsOn: weekStartsOn
+            )
+            let isDue = tracker.schedule.isDue(on: dayKey, completedCountInWeek: weeklyCountBeforeToday)
+
+            guard isDue || todayEntry != nil else { continue }
+
+            let weeklyProgressText: String?
+            if case let .weeklyQuota(targetCount) = tracker.schedule {
+                let completedCount = completionCountBeforeOrOnDay(
+                    entries: entries,
+                    trackerID: tracker.id,
+                    dayKey: dayKey,
+                    weekStartsOn: weekStartsOn
+                )
+                weeklyProgressText = "\(min(completedCount, targetCount))/\(targetCount)"
+            } else {
+                weeklyProgressText = nil
+            }
+
+            let item = TodayTrackerItem(
+                tracker: tracker,
+                entry: todayEntry,
+                weeklyProgressText: weeklyProgressText
+            )
+
+            if todayEntry == nil {
+                pendingItems.append(item)
+            } else {
+                recordedItems.append(item)
+            }
+        }
+
+        return TodayOverview(
+            activeTrackerCount: activeTrackers.count,
+            pendingItems: pendingItems,
+            recordedItems: recordedItems
+        )
+    }
+
     static func buildTodayItems(
         trackers: [Tracker],
         entries: [TrackingEntry],
         dayKey: DayKey,
         weekStartsOn: MarkerWeekday
     ) -> [TodayTrackerItem] {
-        let activeTrackers = trackers.filter { !$0.isArchived }
-        let todayEntries = Dictionary(uniqueKeysWithValues: entries
-            .filter { $0.dayKey == dayKey }
-            .map { ($0.trackerId, $0) })
-
-        return activeTrackers.compactMap { tracker in
-            let completedCount = completionCountBeforeOrOnDay(
-                entries: entries,
-                trackerID: tracker.id,
-                dayKey: dayKey,
-                weekStartsOn: weekStartsOn
-            )
-            let isDue = tracker.schedule.isDue(on: dayKey, completedCountInWeek: completedCount)
-
-            guard isDue else { return nil }
-
-            let weeklyProgressText: String?
-            if case let .weeklyQuota(targetCount) = tracker.schedule {
-                weeklyProgressText = "\(min(completedCount, targetCount))/\(targetCount)"
-            } else {
-                weeklyProgressText = nil
-            }
-
-            let todayEntry = todayEntries[tracker.id]
-
-            return TodayTrackerItem(
-                tracker: tracker,
-                hasRecord: todayEntry != nil,
-                isCompleted: todayEntry?.countsAsCompletion ?? false,
-                weeklyProgressText: weeklyProgressText,
-                entrySummaryText: todayEntry?.summary
-            )
-        }
-        .sorted { $0.tracker.createdAt < $1.tracker.createdAt }
+        buildTodayOverview(
+            trackers: trackers,
+            entries: entries,
+            dayKey: dayKey,
+            weekStartsOn: weekStartsOn
+        )
+        .allItems
     }
 
     static func buildHistorySections(trackers: [Tracker], entries: [TrackingEntry]) -> [HistoryDaySection] {

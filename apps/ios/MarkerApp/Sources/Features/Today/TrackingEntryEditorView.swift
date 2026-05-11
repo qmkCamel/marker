@@ -3,6 +3,7 @@ import SwiftUI
 
 struct TrackingEntryEditorView: View {
     @State var draft: TrackingEntryDraft
+    @State private var deleteConfirmationPresented = false
 
     let onSave: (TrackingEntryDraft) -> Void
     let onDelete: () -> Void
@@ -27,6 +28,8 @@ struct TrackingEntryEditorView: View {
                 noteSection
             }
 
+            timeOwnershipSection
+
             if let validationMessage = draft.validationMessage {
                 Section {
                     Text(validationMessage)
@@ -34,24 +37,38 @@ struct TrackingEntryEditorView: View {
                 }
             }
 
+            Section {
+                Button("保存记录") {
+                    onSave(draft)
+                }
+                .disabled(draft.validationMessage != nil)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .accessibilityIdentifier("trackingEntryEditor.save")
+            }
+
             if draft.existingEntryID != nil {
                 Section {
-                    Button("删除今日记录", role: .destructive) {
-                        onDelete()
+                    Button("删除这条记录", role: .destructive) {
+                        deleteConfirmationPresented = true
                     }
+                    .accessibilityIdentifier("trackingEntryEditor.delete")
                 }
             }
         }
-        .navigationTitle("记录内容")
+        .navigationTitle(draft.existingEntryID == nil ? "记录内容" : "编辑记录")
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
                 Button("取消") { onCancel() }
+                    .accessibilityIdentifier("trackingEntryEditor.cancel")
             }
-
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("保存") { onSave(draft) }
-                    .disabled(draft.validationMessage != nil)
+        }
+        .alert("删除这条记录？", isPresented: $deleteConfirmationPresented) {
+            Button("取消", role: .cancel) {}
+            Button("删除", role: .destructive) {
+                onDelete()
             }
+        } message: {
+            Text("删除后，\(draft.dayKey.rawValue) 的这条记录将不再出现在历史和统计中。")
         }
     }
 
@@ -114,6 +131,18 @@ struct TrackingEntryEditorView: View {
         Section("备注记录") {
             TextField("记录内容", text: $draft.note, axis: .vertical)
                 .lineLimit(3...6)
+        }
+    }
+
+    private var timeOwnershipSection: some View {
+        Section("时间归属") {
+            LabeledContent("归属日期", value: draft.dayKey.rawValue)
+            LabeledContent("记录时间", value: draft.recordedAt.formatted(date: .omitted, time: .shortened))
+            LabeledContent("设备时区", value: draft.recordedTimeZoneIdentifier)
+
+            Text("记录会按归属日期进入 History 和 Statistics。")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
         }
     }
 }

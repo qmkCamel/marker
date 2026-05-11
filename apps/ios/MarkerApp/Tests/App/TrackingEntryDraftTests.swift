@@ -47,4 +47,31 @@ final class TrackingEntryDraftTests: XCTestCase {
 
         XCTAssertEqual(draft.validationMessage, "请输入记录内容")
     }
+
+    func testDraftPreservesExistingEntryTimeZone() {
+        let tracker = Tracker(
+            id: UUID(),
+            kind: .habit,
+            name: "Walk",
+            colorToken: "green",
+            notes: "",
+            schedule: .daily,
+            isArchived: false,
+            createdAt: Date(timeIntervalSince1970: 1_776_096_000),
+            updatedAt: Date(timeIntervalSince1970: 1_776_096_000)
+        )
+        let entry = TrackingEntry(
+            id: UUID(),
+            trackerId: tracker.id,
+            dayKey: DayKey(year: 2026, month: 4, day: 13),
+            recordedAt: Date(timeIntervalSince1970: 1_776_096_000),
+            recordedTimeZoneIdentifier: "Asia/Tokyo",
+            payload: .completion()
+        )
+
+        let draft = TrackingEntryDraft(tracker: tracker, dayKey: entry.dayKey, existingEntry: entry)
+
+        XCTAssertEqual(draft.recordedTimeZoneIdentifier, "Asia/Tokyo")
+        XCTAssertEqual(draft.makeEntry().recordedTimeZoneIdentifier, "Asia/Tokyo")
+    }
 }

@@ -9,62 +9,125 @@ struct TodayView: View {
 
     var body: some View {
         todayList
-        .navigationTitle("Today")
-        .toolbar(content: toolbarContent)
-        .sheet(isPresented: trackerEditorPresented) { trackerEditorSheet }
-        .sheet(isPresented: entryEditorPresented) { entryEditorSheet }
+            .navigationTitle("Today")
+            .toolbar(content: toolbarContent)
+            .sheet(isPresented: trackerEditorPresented) { trackerEditorSheet }
+            .sheet(isPresented: entryEditorPresented) { entryEditorSheet }
+    }
+
+    private var todayList: some View {
+        List {
+            Section {
+                summaryCard
+            }
+
+            todayContent
+
+            Section {
+                localFirstRow
+            }
+        }
     }
 
     @ViewBuilder
-    private var todaySection: some View {
-        Section("今天要做") {
-            if model.todayItems.isEmpty {
+    private var todayContent: some View {
+        let overview = model.todayOverview
+
+        if overview.activeTrackerCount == 0 {
+            Section {
                 ContentUnavailableView(
-                    "今天很轻松",
-                    systemImage: "sparkles",
-                    description: Text("当前没有待追踪项目，或者你还没有创建追踪项。")
+                    "先记录一件照顾自己的事",
+                    systemImage: "plus.circle",
+                    description: Text("可以从习惯、用药、经期或自定义记录开始。")
                 )
 
-                Button("创建第一个追踪项") {
+                Button("创建追踪项") {
                     presentedDraft = .empty
                 }
                 .accessibilityIdentifier("today.addTracker")
-            } else {
-                ForEach(model.todayItems, id: \.id) { item in
-                    TodayTrackerRow(
-                        item: item,
-                        scheduleText: scheduleDescription(for: item),
-                        onPrimaryAction: {
-                            if item.tracker.kind == .habit {
-                                model.toggleEntry(for: item.tracker)
-                            } else {
+            }
+        } else if overview.pendingItems.isEmpty && overview.recordedItems.isEmpty {
+            Section {
+                ContentUnavailableView(
+                    "今天很轻松",
+                    systemImage: "sparkles",
+                    description: Text("今天没有按计划需要确认的项目。")
+                )
+            }
+        } else {
+            if !overview.pendingItems.isEmpty {
+                Section("待确认 · \(overview.pendingItems.count)") {
+                    ForEach(overview.pendingItems, id: \.id) { item in
+                        TodayTrackerRow(
+                            item: item,
+                            scheduleText: scheduleDescription(for: item),
+                            onPrimaryAction: {
+                                if item.tracker.kind == .habit {
+                                    model.toggleEntry(for: item.tracker)
+                                } else {
+                                    presentedEntryDraft = model.entryDraft(for: item.tracker)
+                                }
+                            },
+                            onEditTracker: {
+                                presentedDraft = TrackerDraft(tracker: item.tracker)
+                            }
+                        )
+                    }
+                }
+            }
+
+            if !overview.recordedItems.isEmpty {
+                Section("今日已记录 · \(overview.recordedItems.count)") {
+                    ForEach(overview.recordedItems, id: \.id) { item in
+                        TodayTrackerRow(
+                            item: item,
+                            scheduleText: scheduleDescription(for: item),
+                            onPrimaryAction: {
+                                presentedEntryDraft = model.entryDraft(for: item.tracker)
+                            },
+                            onEditTracker: {
                                 presentedEntryDraft = model.entryDraft(for: item.tracker)
                             }
-                        },
-                        onEditTracker: {
-                            presentedDraft = TrackerDraft(tracker: item.tracker)
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
     }
 
-    private var progressCard: some View {
-        let completed = model.todayItems.filter(\.isCompleted).count
-        let total = model.todayItems.count
-        let progress = total == 0 ? 0 : Double(completed) / Double(total)
+    private var summaryCard: some View {
+        let overview = model.todayOverview
 
         return VStack(alignment: .leading, spacing: 12) {
-            Text("今日进度")
-                .font(.headline)
+            HStack(alignment: .firstTextBaseline) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(overview.summaryText)
+                        .font(.headline)
 
-            ProgressView(value: progress)
-                .tint(.accentColor)
+                    Text("记录会按当前设备时区归属到今天。")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
 
-            Text(total == 0 ? "先创建追踪项，开始第一天记录。" : "已完成 \(completed) / \(total)")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
+                Spacer()
+
+                Label("本地保存", systemImage: "checkmark.shield")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Color.green)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.green.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+
+            HStack(spacing: 6) {
+                ForEach(0..<10, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 4, style: .continuous)
+                        .fill(tileColor(index: index, overview: overview))
+                        .frame(width: 18, height: 18)
+                }
+            }
+            .accessibilityHidden(true)
         }
         .padding(CGFloat(MarkerSpacing.screenPadding))
         .background(.thinMaterial)
@@ -73,18 +136,38 @@ struct TodayView: View {
         .listRowBackground(Color.clear)
     }
 
-    private var todayList: some View {
-        List {
-            Section {
-                progressCard
+    private var localFirstRow: some View {
+        Label {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("记录保存在本机")
+                    .font(.subheadline.weight(.semibold))
+                Text("同步和自动备份暂未启用。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
             }
-
-            todaySection
+        } icon: {
+            Image(systemName: "lock.shield")
+                .foregroundStyle(Color.green)
         }
     }
 
+    private func tileColor(index: Int, overview: TodayOverview) -> Color {
+        let recordedCount = overview.recordedItems.count
+        let pendingCount = overview.pendingItems.count
+
+        if index < recordedCount {
+            return Color.green.opacity(0.75)
+        }
+
+        if index < recordedCount + pendingCount {
+            return Color.orange.opacity(0.35)
+        }
+
+        return Color.secondary.opacity(0.12)
+    }
+
     private func scheduleDescription(for item: TodayTrackerItem) -> String {
-        let base = "频率：\(MarkerPresentation.scheduleDescription(item.tracker.schedule))"
+        let base = MarkerPresentation.scheduleDescription(item.tracker.schedule)
         guard let weeklyProgressText = item.weeklyProgressText else {
             return base
         }
@@ -189,9 +272,9 @@ private struct TodayTrackerRow: View {
                     .foregroundStyle(.secondary)
 
                 if let entrySummaryText = item.entrySummaryText {
-                    Text("今日记录：\(entrySummaryText)")
+                    Text(statusSummary(entrySummaryText))
                         .font(.footnote)
-                        .foregroundStyle(item.isCompleted ? Color.secondary : Color.orange)
+                        .foregroundStyle(item.isSkippedMedication ? Color.orange : Color.secondary)
                 }
 
                 if !item.tracker.notes.isEmpty {
@@ -216,25 +299,56 @@ private struct TodayTrackerRow: View {
 
     @ViewBuilder
     private var actionView: some View {
-        if item.tracker.kind == .habit {
-            Image(systemName: item.isCompleted ? "checkmark.circle.fill" : "circle")
+        if item.hasRecord {
+            recordedStatusView
+        } else if item.tracker.kind == .habit {
+            Image(systemName: "circle")
                 .font(.system(size: 28))
-                .foregroundStyle(item.isCompleted ? MarkerPresentation.color(for: item.tracker.colorToken) : .secondary)
+                .foregroundStyle(.secondary)
+                .accessibilityLabel("记录完成")
         } else {
-            Text(item.hasRecord ? "编辑记录" : "记录")
+            Text(pendingActionTitle)
                 .font(.footnote.weight(.semibold))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(actionBackground)
+                .background(MarkerPresentation.color(for: item.tracker.colorToken).opacity(0.15))
                 .clipShape(Capsule())
         }
     }
 
-    private var actionBackground: Color {
-        if item.hasRecord {
-            return Color.secondary.opacity(0.15)
+    @ViewBuilder
+    private var recordedStatusView: some View {
+        if item.isCompleted {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 28))
+                .foregroundStyle(MarkerPresentation.color(for: item.tracker.colorToken))
+                .accessibilityLabel("已记录")
+        } else {
+            Image(systemName: "minus.circle.fill")
+                .font(.system(size: 28))
+                .foregroundStyle(Color.orange)
+                .accessibilityLabel("已记录但不计入完成")
+        }
+    }
+
+    private var pendingActionTitle: String {
+        switch item.tracker.kind {
+        case .habit:
+            return "完成"
+        case .medication:
+            return "确认"
+        case .cycle:
+            return "记录状态"
+        case .custom:
+            return "写记录"
+        }
+    }
+
+    private func statusSummary(_ summary: String) -> String {
+        if item.isSkippedMedication {
+            return "\(summary) · 不计入服用"
         }
 
-        return MarkerPresentation.color(for: item.tracker.colorToken).opacity(0.15)
+        return summary
     }
 }
